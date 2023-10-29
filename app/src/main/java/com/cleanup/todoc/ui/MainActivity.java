@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
      */
     private void addTask(@NonNull Task task) {
         long id = mTaskViewModel.insert(task);
-        Toast.makeText(this, "id:" + id + "Task inserted", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Task inserted", Toast.LENGTH_SHORT).show();
         updateTasks();
     }
 
