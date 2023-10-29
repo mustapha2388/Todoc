@@ -20,7 +20,7 @@ public class TaskRepository {
     }
 
     public LiveData<List<Task>> getTask() {
-        return this.taskDao.getAllTask();
+        return this.taskDao.getAllTasks();
     }
 
     public long insert(Task task) {
@@ -30,4 +30,25 @@ public class TaskRepository {
     public int delete(Task task) {
         return taskDao.delete(task);
     }
+
+    public LiveData<Task> getTaskById(long id) {
+        return this.taskDao.getTaskById(id);
+    }
+
+    public LiveData<List<Task>> getAllTaskAZComparator() {
+        return this.taskDao.getAllTaskAZComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskZAComparator() {
+        return this.taskDao.getAllTaskZAComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskOldFirstComparator() {
+        return this.taskDao.getAllTaskOldFirstComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskRecentFirstComparator() {
+        return this.taskDao.getAllTaskRecentFirstComparator();
+    }
+
 }

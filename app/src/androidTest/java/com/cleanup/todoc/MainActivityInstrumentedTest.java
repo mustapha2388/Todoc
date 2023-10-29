@@ -1,29 +1,26 @@
 package com.cleanup.todoc;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.replaceText;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static com.cleanup.todoc.TestUtils.withRecyclerView;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
-import android.view.View;
-import android.widget.TextView;
-
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
+import androidx.room.Room;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.rule.ActivityTestRule;
 
-import com.cleanup.todoc.ui.MainActivity;
+import com.cleanup.todoc.dao.ProjectDao;
+import com.cleanup.todoc.dao.TaskDao;
+import com.cleanup.todoc.dao.database.AppDatabase;
+import com.cleanup.todoc.model.Project;
+import com.cleanup.todoc.model.Task;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Objects;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -34,92 +31,98 @@ import java.util.Objects;
 @RunWith(AndroidJUnit4.class)
 public class MainActivityInstrumentedTest {
     @Rule
-    public ActivityTestRule<MainActivity> rule = new ActivityTestRule<>(MainActivity.class);
+    public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
-    @Test
-    public void addAndRemoveTask() {
-        MainActivity activity = rule.getActivity();
-        TextView lblNoTask = activity.findViewById(R.id.lbl_no_task);
-        RecyclerView listTasks = activity.findViewById(R.id.list_tasks);
+    private AppDatabase database;
+    private TaskDao taskDao;
+    private ProjectDao projectDao;
 
-        onView(withId(R.id.fab_add_task)).perform(click());
-        onView(withId(R.id.txt_task_name)).perform(replaceText("Tâche example"));
-        onView(withId(android.R.id.button1)).perform(click());
+    private final Project PROJECT_DEMO = new Project("Tartampion", 0xFFEADAD1);
+    private final Task TASK_DEMO = new Task(1L, "tâche 1", new Date().getTime());
 
-        // Check that lblTask is not displayed anymore
-        assertThat(lblNoTask.getVisibility(), equalTo(View.GONE));
-        // Check that recyclerView is displayed
-        assertThat(listTasks.getVisibility(), equalTo(View.VISIBLE));
-        // Check that it contains one element only
-        assertThat(Objects.requireNonNull(listTasks.getAdapter()).getItemCount(), equalTo(1));
 
-        onView(withId(R.id.img_delete)).perform(click());
+    private final Task TASKAAA = new Task(1L, "aaa Tâche example", 123);
+    private final Task TASKZZZ = new Task(1L, "zzz Tâche example", 456);
+    private final Task TASKHHH = new Task(1L, "hhh Tâche example", 789);
 
-        // Check that lblTask is displayed
-        assertThat(lblNoTask.getVisibility(), equalTo(View.VISIBLE));
-        // Check that recyclerView is not displayed anymore
-        assertThat(listTasks.getVisibility(), equalTo(View.GONE));
+    @Before
+    public void createDb() {
+        this.database = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase.class).allowMainThreadQueries().build();
+
+        taskDao = database.mTaskDao();
+        projectDao = database.mProjectDao();
+    }
+
+
+    //TODO TRY TO USE LiveDataTestUtil.getValue for two tests are passed
+    @After
+    public void closeDb() {
+        database.close();
     }
 
     @Test
-    public void sortTasks() {
-        MainActivity activity = rule.getActivity();
+    public void addAndRemoveTask() throws InterruptedException {
 
-        onView(withId(R.id.fab_add_task)).perform(click());
-        onView(withId(R.id.txt_task_name)).perform(replaceText("aaa Tâche example"));
-        onView(withId(android.R.id.button1)).perform(click());
-        onView(withId(R.id.fab_add_task)).perform(click());
-        onView(withId(R.id.txt_task_name)).perform(replaceText("zzz Tâche example"));
-        onView(withId(android.R.id.button1)).perform(click());
-        onView(withId(R.id.fab_add_task)).perform(click());
-        onView(withId(R.id.txt_task_name)).perform(replaceText("hhh Tâche example"));
-        onView(withId(android.R.id.button1)).perform(click());
+//        Handler handler = new Handler(Looper.getMainLooper());
+//        handler.post(() -> {
+//            try {
+        long projectId = projectDao.insert(PROJECT_DEMO);
+        PROJECT_DEMO.setId(projectId);
 
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(0, R.id.lbl_task_name))
-                .check(matches(withText("aaa Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(1, R.id.lbl_task_name))
-                .check(matches(withText("zzz Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(2, R.id.lbl_task_name))
-                .check(matches(withText("hhh Tâche example")));
+        List<Task> listBeforeInsertion = LiveDataTestUtil.getValue(taskDao.getAllTasks());
 
-        // Sort alphabetical
-        onView(withId(R.id.action_filter)).perform(click());
-        onView(withText(R.string.sort_alphabetical)).perform(click());
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(0, R.id.lbl_task_name))
-                .check(matches(withText("aaa Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(1, R.id.lbl_task_name))
-                .check(matches(withText("hhh Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(2, R.id.lbl_task_name))
-                .check(matches(withText("zzz Tâche example")));
+        long taskId = taskDao.insert(TASK_DEMO);
+        TASK_DEMO.setId(taskId);
 
-        // Sort alphabetical inverted
-        onView(withId(R.id.action_filter)).perform(click());
-        onView(withText(R.string.sort_alphabetical_invert)).perform(click());
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(0, R.id.lbl_task_name))
-                .check(matches(withText("zzz Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(1, R.id.lbl_task_name))
-                .check(matches(withText("hhh Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(2, R.id.lbl_task_name))
-                .check(matches(withText("aaa Tâche example")));
+        List<Task> listAfterInsertion = LiveDataTestUtil.getValue(taskDao.getAllTasks());
 
-        // Sort old first
-        onView(withId(R.id.action_filter)).perform(click());
-        onView(withText(R.string.sort_oldest_first)).perform(click());
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(0, R.id.lbl_task_name))
-                .check(matches(withText("aaa Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(1, R.id.lbl_task_name))
-                .check(matches(withText("zzz Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(2, R.id.lbl_task_name))
-                .check(matches(withText("hhh Tâche example")));
 
-        // Sort recent first
-        onView(withId(R.id.action_filter)).perform(click());
-        onView(withText(R.string.sort_recent_first)).perform(click());
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(0, R.id.lbl_task_name))
-                .check(matches(withText("hhh Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(1, R.id.lbl_task_name))
-                .check(matches(withText("zzz Tâche example")));
-        onView(withRecyclerView(R.id.list_tasks).atPositionOnView(2, R.id.lbl_task_name))
-                .check(matches(withText("aaa Tâche example")));
+        assertEquals(listBeforeInsertion.size() + 1, listAfterInsertion.size());
+
+        Task taskInserted = LiveDataTestUtil.getValue(taskDao.getTaskById(taskId));
+
+        assertEquals(taskId, taskInserted.getId());
+
+        taskDao.delete(taskInserted);
+
+        assertEquals(0, LiveDataTestUtil.getValue(taskDao.getAllTasks()).size());
+    }
+
+    @Test
+    public void sortTask() throws InterruptedException {
+
+
+        long projectId = this.projectDao.insert(PROJECT_DEMO);
+        PROJECT_DEMO.setId(projectId);
+
+        long id = this.taskDao.insert(TASKAAA);
+        TASKAAA.setId(id);
+
+        id = this.taskDao.insert(TASKZZZ);
+        TASKZZZ.setId(id);
+
+        id = this.taskDao.insert(TASKHHH);
+        TASKHHH.setId(id);
+
+        List<Task> listAlphabetical = LiveDataTestUtil.getValue(taskDao.getAllTaskAZComparator());
+        assertEquals("aaa Tâche example", listAlphabetical.get(0).getName());
+        assertEquals("hhh Tâche example", listAlphabetical.get(1).getName());
+        assertEquals("zzz Tâche example", listAlphabetical.get(2).getName());
+
+        List<Task> listAlphabeticalInverted = LiveDataTestUtil.getValue(taskDao.getAllTaskZAComparator());
+        assertEquals("zzz Tâche example", listAlphabeticalInverted.get(0).getName());
+        assertEquals("hhh Tâche example", listAlphabeticalInverted.get(1).getName());
+        assertEquals("aaa Tâche example", listAlphabeticalInverted.get(2).getName());
+
+        List<Task> listOldFirst = LiveDataTestUtil.getValue(taskDao.getAllTaskOldFirstComparator());
+        assertEquals("aaa Tâche example", listOldFirst.get(0).getName());
+        assertEquals("zzz Tâche example", listOldFirst.get(1).getName());
+        assertEquals("hhh Tâche example", listOldFirst.get(2).getName());
+
+        List<Task> listRecentFirst = LiveDataTestUtil.getValue(taskDao.getAllTaskRecentFirstComparator());
+        assertEquals("hhh Tâche example", listRecentFirst.get(0).getName());
+        assertEquals("zzz Tâche example", listRecentFirst.get(1).getName());
+        assertEquals("aaa Tâche example", listRecentFirst.get(2).getName());
+
     }
 }

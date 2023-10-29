@@ -26,7 +26,6 @@ import com.cleanup.todoc.model.Task;
 import com.cleanup.todoc.viewmodel.ProjectViewModel;
 import com.cleanup.todoc.viewmodel.TaskViewModel;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -95,7 +94,6 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
 
         initViewModels();
         getProjectsFromDatabase();
-//        getTasksFromDatabase();
 
         initListTasks();
 
@@ -237,22 +235,22 @@ public class MainActivity extends AppCompatActivity implements TasksAdapter.Dele
                 listTasks.setVisibility(View.VISIBLE);
                 switch (sortMethod) {
                     case ALPHABETICAL:
-                        Collections.sort(tasks, new Task.TaskAZComparator());
+                        this.mTaskViewModel.getAllTaskAZComparator().observe(this, tasksOrdered -> adapter.updateTasks(tasksOrdered));
                         break;
                     case ALPHABETICAL_INVERTED:
-                        Collections.sort(tasks, new Task.TaskZAComparator());
+                        this.mTaskViewModel.getAllTaskZAComparator().observe(this, tasksOrdered -> adapter.updateTasks(tasksOrdered));
                         break;
                     case RECENT_FIRST:
-                        Collections.sort(tasks, new Task.TaskRecentComparator());
+                        this.mTaskViewModel.getAllTaskRecentFirstComparator().observe(this, tasksOrdered -> adapter.updateTasks(tasksOrdered));
                         break;
                     case OLD_FIRST:
-                        Collections.sort(tasks, new Task.TaskOldComparator());
+                        this.mTaskViewModel.getAllTaskOldFirstComparator().observe(this, tasksOrdered -> adapter.updateTasks(tasksOrdered));
                         break;
 
                 }
-                adapter.updateTasks(tasks);
             }
         });
+
     }
 
     /**

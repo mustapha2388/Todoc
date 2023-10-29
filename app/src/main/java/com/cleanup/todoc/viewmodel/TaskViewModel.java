@@ -25,11 +25,31 @@ public class TaskViewModel extends AndroidViewModel {
         return allTasks;
     }
 
+    public LiveData<Task> getTaskById(long id) {
+        return repository.getTaskById(id);
+    }
+
     public long insert(Task task) {
         return repository.insert(task);
     }
 
     public int delete(Task task) {
         return repository.delete(task);
+    }
+
+    public LiveData<List<Task>> getAllTaskAZComparator() {
+        return repository.getAllTaskAZComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskZAComparator() {
+        return repository.getAllTaskZAComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskRecentFirstComparator() {
+        return repository.getAllTaskRecentFirstComparator();
+    }
+
+    public LiveData<List<Task>> getAllTaskOldFirstComparator() {
+        return repository.getAllTaskOldFirstComparator();
     }
 }
